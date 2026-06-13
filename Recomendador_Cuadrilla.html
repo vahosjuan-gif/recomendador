@@ -169,6 +169,17 @@
         <div class="kpi area"><div class="n" id="k-tfr">—</div><div class="l">Frutas totales en el área</div></div>
         <div class="kpi area"><div class="n" id="k-tkg">—</div><div class="l">Kg estimados en el área</div></div>
       </div>
+      <!-- RENDIMIENTO POR PERSONA PARA EL ÁREA -->
+      <div style="margin-top:10px;background:#D6EAD0;border:1.5px solid #548235;border-radius:11px;padding:13px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+        <div>
+          <div style="font-size:12px;font-weight:700;color:#375623;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;">Rendimiento por persona — área del bloque</div>
+          <div style="font-size:12px;color:#6B7568;">Frutas totales del área ÷ personas asignadas. Cuántas frutas le corresponden a cada persona para cubrir este bloque.</div>
+        </div>
+        <div style="text-align:center;min-width:130px;">
+          <div style="font-size:28px;font-weight:800;color:#375623;" id="k-rpp">—</div>
+          <div style="font-size:11px;color:#6B7568;">frutas / persona</div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -306,16 +317,30 @@
     },plugins:[bandPlugin]
   });
 
+  function refreshArea(){
+    var fb=+fbEl.value, area=+aEl.value, per=+perEl.value, jor=+jorEl.value;
+    $('area-v').textContent=area.toFixed(1)+' ha';
+    var f=fpd(fb);
+    var haDia=(fb>0?(f/fb)*BHA*per:0);
+    var diasCubre=(haDia>0?area/haDia:0);
+    var nBloques=area/BHA;
+    var tFrutas=fb*nBloques;
+    var tKg=tFrutas*KG;
+    var rpp=per>0?Math.round(tFrutas/per):0;
+    $('k-haday').textContent=haDia.toFixed(2)+' ha';
+    $('k-days').textContent=diasCubre<1?'< 1 día':diasCubre.toFixed(1)+' días';
+    $('k-tfr').textContent=Math.round(tFrutas).toLocaleString('es-CO');
+    $('k-tkg').textContent=Math.round(tKg).toLocaleString('es-CO')+' kg';
+    $('k-rpp').textContent=rpp.toLocaleString('es-CO');
+  }
+
   function refresh(){
     var fb=+fbEl.value, area=+aEl.value, bmin=+bminEl.value, bmax=+bmaxEl.value,
         dias=+diasEl.value, per=+perEl.value, hrs=+hrsEl.value, jor=+jorEl.value;
 
-    // Validar bmin <= bmax
     if(bmin>bmax){ if(this===bminEl) bmaxEl.value=bmin; else bminEl.value=bmax; bmin=+bminEl.value; bmax=+bmaxEl.value; }
 
-    // Labels
     $('fb-v').textContent=fb.toLocaleString('es-CO');
-    $('area-v').textContent=area.toFixed(1)+' ha';
     $('bmin-v').textContent=bmin.toFixed(1);
     $('bmax-v').textContent=bmax.toFixed(1);
     $('dias-v').textContent=dias;
@@ -323,28 +348,19 @@
     $('hrs-v').textContent=hrs.toFixed(1);
     $('jor-v').textContent=Math.round(jor).toLocaleString('es-CO');
 
-    // Cálculos
     var f=fpd(fb);
     var cost=costKg(fb,jor);
     var fDia=f*per;
     var kgPer=f*KG;
-    var haDia=(fb>0 ? (f/fb)*BHA*per : 0);
-    var diasCubre=(haDia>0 ? area/haDia : 0);
-    var nBloques=area/BHA;
-    var tFrutas=fb*nBloques;
-    var tKg=tFrutas*KG;
 
-    // KPIs
     $('k-fpd').textContent=Math.round(f);
     $('k-fdia').textContent=Math.round(fDia).toLocaleString('es-CO');
     $('k-kg').textContent=fmt(kgPer,1)+' kg';
     $('k-cost').textContent=fmtc(cost)+'/kg';
-    $('k-haday').textContent=haDia.toFixed(2)+' ha';
-    $('k-days').textContent=diasCubre<1?'< 1 día':diasCubre.toFixed(1)+' días';
-    $('k-tfr').textContent=Math.round(tFrutas).toLocaleString('es-CO');
-    $('k-tkg').textContent=Math.round(tKg).toLocaleString('es-CO')+' kg';
 
-    // Recomendación B o C
+    // Actualizar también los KPIs de área (dependen de fb y per)
+    refreshArea();
+
     var esB=fb>=500;
     var r=$('reco'); r.className='reco'+(esB?'':' c');
     $('r-tag').textContent=esB?'Sistema B':'Sistema C';
@@ -354,19 +370,18 @@
       ?'<b>Frecuencia:</b> cosecha ≈ cada 7 días.<br><b>N° de cuadrillas:</b> según área a recorrer en la semana y el rendimiento.<br><b>Criterio:</b> Brix + organoléptico. <b>Costo estimado:</b> '+fmtc(cost)+'/kg.'
       :'<b>Frecuencia:</b> 7–14 días según la evolución de la fruta.<br><b>N° de operarios:</b> indiferente (individual o en cuadrilla), se ajusta al área.<br><b>Criterio:</b> desde 10 °Brix. <b>Costo estimado:</b> '+fmtc(cost)+'/kg — la fruta dispersa cuesta más por kg.';
 
-    // Semáforo de madurez (rango)
     var dot=$('s-dot'), txt=$('s-txt'), col, msg;
     if(bmax<10){
       col='#B23A2E';
       var f1=Math.ceil((10-bmax)/0.35);
       msg='Aún no cosechar: el Brix máximo ('+bmax.toFixed(1)+'°) no llega a 10. Faltan ~'+f1+' días.';
-    } else if(bmin<10 && bmax>=10){
+    } else if(bmin<10&&bmax>=10){
       col='#BF8F00';
       msg='Cosecha parcial: la fruta más madura ya está en ventana ('+bmax.toFixed(1)+'°Brix) pero parte del bloque aún no llega a 10° (mín. '+bmin.toFixed(1)+'°). Seleccionar frutas maduras.';
-    } else if(bmin>=10 && bmax<=13){
+    } else if(bmin>=10&&bmax<=13){
       col='#548235';
       msg='Ventana óptima ('+bmin.toFixed(1)+'–'+bmax.toFixed(1)+'°Brix). Todo el bloque en punto. Programar la cuadrilla.';
-    } else if(bmin>=10 && bmax>13){
+    } else if(bmin>=10&&bmax>13){
       col='#BF8F00';
       msg='Atención: parte del bloque (Brix máx. '+bmax.toFixed(1)+'°) ya pasó el punto óptimo. Cosechar urgente para no perder calidad.';
     } else {
@@ -375,12 +390,10 @@
     }
     dot.style.background=col; txt.textContent=msg;
 
-    // Chart 1
     c1.data.datasets[0].data=cSeries(jor);
     c1.data.datasets[2].data=[{x:fb,y:Math.round(cost)}];
     c1.$fb=fb; c1.update();
 
-    // Chart 2
     c2.data.datasets[0].data=dxs.map(function(d){return +(bmax+0.35*d).toFixed(2);});
     c2.data.datasets[1].data=dxs.map(function(d){return +(bmin+0.35*d).toFixed(2);});
     c2.data.datasets[2].data=[{x:0,y:bmin}];
@@ -388,7 +401,10 @@
     c2.update();
   }
 
-  [fbEl,aEl,bminEl,bmaxEl,diasEl,perEl,hrsEl,jorEl].forEach(function(el){el.addEventListener('input',refresh);});
+  // Área: solo actualiza los 4 KPIs de cobertura, no toca nada más
+  aEl.addEventListener('input', refreshArea);
+  // El resto actualiza todo
+  [fbEl,bminEl,bmaxEl,diasEl,perEl,hrsEl,jorEl].forEach(function(el){el.addEventListener('input',refresh);});
   refresh();
 })();
 </script>
