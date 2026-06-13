@@ -157,27 +157,28 @@
       <div class="grid4">
         <div class="kpi"><div class="n" id="k-fpd">—</div><div class="l">Fr / persona-día</div></div>
         <div class="kpi"><div class="n" id="k-fdia">—</div><div class="l">Fr totales / día (cuadrilla)</div></div>
-        <div class="kpi"><div class="n" id="k-kg">—</div><div class="l">Kg / persona-día</div></div>
+        <div class="kpi"><div class="n" id="k-kgt">—</div><div class="l">Kg del bloque (fijos)</div></div>
         <div class="kpi"><div class="n" id="k-cost">—</div><div class="l">Costo $/kg</div></div>
       </div>
-
-      <!-- KPIs ÁREA -->
-      <div class="secttl" style="margin-top:14px;">Cobertura y volumen del bloque ingresado</div>
-      <div class="grid4">
-        <div class="kpi area"><div class="n" id="k-haday">—</div><div class="l">Ha cubiertas / día (cuadrilla)</div></div>
-        <div class="kpi area"><div class="n" id="k-days">—</div><div class="l">Días para cubrir el área</div></div>
-        <div class="kpi area"><div class="n" id="k-tfr">—</div><div class="l">Frutas totales en el área</div></div>
-        <div class="kpi area"><div class="n" id="k-tkg">—</div><div class="l">Kg estimados en el área</div></div>
+      <div class="grid2x2" style="margin-top:10px;">
+        <div class="kpi"><div class="n" id="k-ctot">—</div><div class="l">Costo de cosechar el bloque (personas × jornal)</div></div>
+        <div class="kpi"><div class="n" id="k-kgp">—</div><div class="l">Kg del bloque</div></div>
       </div>
-      <!-- RENDIMIENTO POR PERSONA PARA EL ÁREA -->
-      <div style="margin-top:10px;background:#D6EAD0;border:1.5px solid #548235;border-radius:11px;padding:13px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
-        <div>
-          <div style="font-size:12px;font-weight:700;color:#375623;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;">Rendimiento por persona — área del bloque</div>
-          <div style="font-size:12px;color:#6B7568;">Frutas totales del área ÷ personas asignadas. Cuántas frutas le corresponden a cada persona para cubrir este bloque.</div>
+
+      <!-- ÁREA A RECORRER -->
+      <div class="secttl" style="margin-top:14px;">Área a recorrer del bloque</div>
+      <div style="background:#D6EAD0;border:1.5px solid #548235;border-radius:11px;padding:15px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;">
+        <div style="text-align:center;min-width:120px;">
+          <div style="font-size:26px;font-weight:800;color:#375623;" id="k-area">0,30 ha</div>
+          <div style="font-size:11px;color:#6B7568;">área a recorrer</div>
         </div>
-        <div style="text-align:center;min-width:130px;">
-          <div style="font-size:28px;font-weight:800;color:#375623;" id="k-rpp">—</div>
-          <div style="font-size:11px;color:#6B7568;">frutas / persona</div>
+        <div style="flex:1;min-width:160px;border-left:1px solid #A9D18E;padding-left:16px;">
+          <div style="font-size:12px;font-weight:700;color:#375623;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;">Rendimiento por persona</div>
+          <div style="font-size:12px;color:#6B7568;">Área a recorrer ÷ personas asignadas.</div>
+        </div>
+        <div style="text-align:center;min-width:120px;">
+          <div style="font-size:26px;font-weight:800;color:#375623;" id="k-rpp">—</div>
+          <div style="font-size:11px;color:#6B7568;">ha / persona</div>
         </div>
       </div>
     </div>
@@ -246,7 +247,14 @@
     }
     return 470;
   }
-  function costKg(fb,jor){ var f=fpd(fb); return f>0?jor/(f*KG):0; }
+  function costKg(fb,per,hrs,jor){
+    // Pago por JORNAL (no destajo): los kg del bloque son fijos.
+    // Más personas = más jornales pagados por los mismos kg = más caro el kg.
+    var jornalDia = jor * (hrs/7.33);          // jornal ajustado por jornada
+    var costoTotal = per * jornalDia;          // lo que se paga al poner 'per' personas
+    var kgBloque = fb * KG;                     // kg que tiene el bloque (fijos)
+    return kgBloque>0 ? costoTotal/kgBloque : 0;
+  }
   function fmt(n,dec){ return dec?n.toFixed(dec):Math.round(n).toLocaleString('es-CO'); }
   function fmtc(n){ return '$'+fmt(n); }
 
@@ -256,7 +264,7 @@
 
   // CHART 1 — costo + productividad
   var xs1=[]; for(var v=50;v<=50000;v+=250) xs1.push(v);
-  function cSeries(jor){ return xs1.map(function(fb){return Math.round(costKg(fb,jor));}); }
+  function cSeries(per,hrs,jor){ return xs1.map(function(fb){return Math.round(costKg(fb,per,hrs,jor));}); }
   var fSeries=xs1.map(function(fb){return Math.round(fpd(fb));});
 
   var mkPlugin={id:'mk',afterDraw:function(c){
@@ -274,9 +282,9 @@
 
   var c1=new Chart($('c1').getContext('2d'),{
     data:{labels:xs1,datasets:[
-      {type:'line',label:'Costo $/kg',data:cSeries(105333),yAxisID:'yc',borderColor:'#B23A2E',borderWidth:2.5,borderDash:[2,3],pointRadius:0,tension:.25},
+      {type:'line',label:'Costo $/kg',data:cSeries(7,7.3,105333),yAxisID:'yc',borderColor:'#B23A2E',borderWidth:2.5,borderDash:[2,3],pointRadius:0,tension:.25},
       {type:'line',label:'Fr/persona-día',data:fSeries,yAxisID:'yf',borderColor:'#548235',borderWidth:2.5,pointRadius:0,tension:.25},
-      {type:'scatter',label:'Tu bloque',data:[{x:800,y:Math.round(costKg(800,105333))}],yAxisID:'yc',borderColor:'#1F2A1A',backgroundColor:'#1F2A1A',pointRadius:6}
+      {type:'scatter',label:'Tu bloque',data:[{x:800,y:Math.round(costKg(800,7,7.3,105333))}],yAxisID:'yc',borderColor:'#1F2A1A',backgroundColor:'#1F2A1A',pointRadius:6}
     ]},
     options:{responsive:true,maintainAspectRatio:false,animation:false,
       scales:{
@@ -318,20 +326,11 @@
   });
 
   function refreshArea(){
-    var fb=+fbEl.value, area=+aEl.value, per=+perEl.value, jor=+jorEl.value;
+    var area=+aEl.value, per=+perEl.value;
     $('area-v').textContent=area.toFixed(1)+' ha';
-    var f=fpd(fb);
-    var haDia=(fb>0?(f/fb)*BHA*per:0);
-    var diasCubre=(haDia>0?area/haDia:0);
-    var nBloques=area/BHA;
-    var tFrutas=fb*nBloques;
-    var tKg=tFrutas*KG;
-    var rpp=per>0?Math.round(tFrutas/per):0;
-    $('k-haday').textContent=haDia.toFixed(2)+' ha';
-    $('k-days').textContent=diasCubre<1?'< 1 día':diasCubre.toFixed(1)+' días';
-    $('k-tfr').textContent=Math.round(tFrutas).toLocaleString('es-CO');
-    $('k-tkg').textContent=Math.round(tKg).toLocaleString('es-CO')+' kg';
-    $('k-rpp').textContent=rpp.toLocaleString('es-CO');
+    $('k-area').textContent=area.toFixed(1)+' ha';
+    var hpp=per>0?area/per:0;
+    $('k-rpp').textContent=hpp.toFixed(2);
   }
 
   function refresh(){
@@ -349,14 +348,18 @@
     $('jor-v').textContent=Math.round(jor).toLocaleString('es-CO');
 
     var f=fpd(fb);
-    var cost=costKg(fb,jor);
-    var fDia=f*per;
-    var kgPer=f*KG;
+    var fAjust=f*(hrs/7.33);
+    var cost=costKg(fb,per,hrs,jor);
+    var fDia=fAjust*per;
+    var kgBloque=fb*KG;                  // kg del bloque (fijos, dependen de la fruta)
+    var costoTotal=per*jor*(hrs/7.33);   // costo de poner 'per' personas
 
-    $('k-fpd').textContent=Math.round(f);
+    $('k-fpd').textContent=Math.round(fAjust);
     $('k-fdia').textContent=Math.round(fDia).toLocaleString('es-CO');
-    $('k-kg').textContent=fmt(kgPer,1)+' kg';
+    $('k-kgt').textContent=Math.round(kgBloque).toLocaleString('es-CO')+' kg';
     $('k-cost').textContent=fmtc(cost)+'/kg';
+    $('k-ctot').textContent=fmtc(costoTotal);
+    $('k-kgp').textContent=fmt(kgBloque*1.0,0)+' kg';
 
     // Actualizar también los KPIs de área (dependen de fb y per)
     refreshArea();
@@ -390,7 +393,7 @@
     }
     dot.style.background=col; txt.textContent=msg;
 
-    c1.data.datasets[0].data=cSeries(jor);
+    c1.data.datasets[0].data=cSeries(per,hrs,jor);
     c1.data.datasets[2].data=[{x:fb,y:Math.round(cost)}];
     c1.$fb=fb; c1.update();
 
