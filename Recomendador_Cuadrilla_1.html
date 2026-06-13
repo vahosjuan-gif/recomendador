@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>App Recomendador de Cuadrilla · Cosecha Fruta Natural · Agrícola Guapa</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root{
+    --v:#548235;--vo:#375623;--vc:#E2EFDA;--vm:#A9D18E;
+    --a:#BF8F00;--ab:#FFF6E6;--r:#B23A2E;--rb:#FBE9E7;
+    --ink:#1F2A1A;--mu:#6B7568;--ln:#DDE7D5;--bg:#F4F8EF;--cd:#FFFFFF;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:Arial,Helvetica,sans-serif;color:var(--ink);background:var(--bg);line-height:1.5;}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 16px 64px;}
+  header{background:linear-gradient(120deg,var(--vo),var(--v));color:#fff;padding:24px 0 28px;}
+  .brand{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;opacity:.82;margin:0 0 5px;}
+  header h1{margin:0;font-size:24px;font-weight:700;}
+  header p{margin:5px 0 0;font-size:13.5px;opacity:.92;max-width:780px;}
+  .grid2{display:grid;grid-template-columns:1fr 1.3fr;gap:16px;}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+  .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+  .grid2x2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  @media(max-width:900px){.grid2,.grid2x2{grid-template-columns:1fr;}.grid3{grid-template-columns:1fr 1fr;}.grid4{grid-template-columns:repeat(2,1fr);}}
+  @media(max-width:500px){.grid3,.grid4{grid-template-columns:1fr 1fr;}}
+  .card{background:var(--cd);border:1px solid var(--ln);border-radius:13px;padding:18px 20px;box-shadow:0 1px 3px rgba(30,50,20,.06);}
+  .card h2{margin:0 0 3px;font-size:15px;color:var(--vo);}
+  .sub{margin:0 0 14px;font-size:12px;color:var(--mu);}
+  .ctrl{margin:0 0 15px;}
+  .ctrl .row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;}
+  .ctrl label{font-size:13px;font-weight:600;}
+  .ctrl .val{font-size:14px;font-weight:700;color:var(--vo);}
+  .ctrl .hint{font-size:11px;color:var(--mu);margin-top:2px;}
+  input[type=range]{width:100%;accent-color:var(--v);height:5px;}
+  .brix-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  /* RECOMENDACIÓN */
+  .reco{border-radius:13px;padding:18px 20px;border:2px solid var(--v);background:var(--vc);}
+  .reco.c{border-color:var(--a);background:var(--ab);}
+  .reco .tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#fff;background:var(--v);border-radius:999px;padding:3px 11px;}
+  .reco.c .tag{background:var(--a);}
+  .reco h3{margin:10px 0 2px;font-size:26px;font-weight:800;color:var(--vo);line-height:1.1;}
+  .reco.c h3{color:#7a5c00;}
+  .reco .modo{font-size:13.5px;font-weight:600;margin:2px 0 12px;}
+  .reco .lines{font-size:13px;line-height:1.6;}
+  .reco .lines b{color:var(--vo);}
+  .reco.c .lines b{color:#7a5c00;}
+  .sem{display:flex;align-items:center;gap:8px;margin:12px 0 0;padding:9px 12px;border-radius:9px;background:#fff;border:1px solid var(--ln);font-size:13px;font-weight:600;}
+  .dot{width:11px;height:11px;border-radius:50%;flex:none;}
+  /* KPIs */
+  .kpi{background:var(--vc);border-radius:11px;padding:11px 12px;text-align:center;}
+  .kpi .n{font-size:20px;font-weight:800;color:var(--vo);}
+  .kpi .l{font-size:10.5px;color:var(--mu);margin-top:2px;line-height:1.25;}
+  /* KPIs área — fondo diferente */
+  .kpi.area{background:#EBF3E8;border:1px solid var(--vm);}
+  .secttl{font-size:12px;font-weight:700;color:var(--vo);margin:22px 0 10px;text-transform:uppercase;letter-spacing:.6px;}
+  .legend{display:flex;flex-wrap:wrap;gap:12px;font-size:11.5px;color:var(--mu);margin:0 0 8px;}
+  .legend span{display:flex;align-items:center;gap:4px;}
+  .chartbox{position:relative;width:100%;height:270px;}
+  table.lim{width:100%;border-collapse:collapse;font-size:12.5px;}
+  table.lim th{background:var(--v);color:#fff;text-align:left;padding:8px 10px;}
+  table.lim td{padding:7px 10px;border-bottom:1px solid var(--ln);vertical-align:top;}
+  table.lim tr:nth-child(even) td{background:var(--vc);}
+  .note{font-size:11.5px;color:var(--mu);line-height:1.55;}
+  .pill{display:inline-block;font-size:11px;font-weight:700;border-radius:5px;padding:2px 6px;margin-right:3px;}
+  .pill.b{background:var(--vc);color:var(--vo);}
+  .pill.c{background:var(--ab);color:#7a5c00;}
+  .divider{border:none;border-top:1px solid var(--ln);margin:20px 0;}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <p class="brand">Agrícola Guapa · Operaciones Agrícolas y Mantenimiento</p>
+    <h1>App Recomendador de Cuadrilla — Cosecha Fruta Natural Adelantada</h1>
+    <p>Ingresa las características del bloque y la app te indica qué sistema usar (B o C), la frecuencia, el estado de madurez y los indicadores de productividad y costo.</p>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="grid2" style="margin-top:22px;">
+
+    <!-- PANEL IZQUIERDO: CONTROLES -->
+    <div class="card">
+      <h2>Características del bloque</h2>
+      <p class="sub">Datos del recorrido (scouting) del bloque a evaluar.</p>
+
+      <div class="ctrl">
+        <div class="row"><label>Frutas estimadas en el bloque</label><span class="val" id="fb-v">800</span></div>
+        <input type="range" id="fb" min="50" max="50000" value="800" step="50"/>
+        <div class="hint">Umbral B / C: 500 frutas. Rango: 50 – 50.000.</div>
+      </div>
+
+      <div class="ctrl">
+        <div class="row"><label>Área del bloque (ha)</label><span class="val" id="area-v">0,30 ha</span></div>
+        <input type="range" id="area" min="0.1" max="50" value="0.3" step="0.1"/>
+        <div class="hint">Desde 0,1 ha hasta 50 ha.</div>
+      </div>
+
+      <div class="ctrl">
+        <label style="font-size:13px;font-weight:600;display:block;margin-bottom:8px;">°Brix del bloque (mínimo y máximo)</label>
+        <div class="brix-row">
+          <div>
+            <div class="row"><label style="font-weight:400;font-size:12px;">Mínimo</label><span class="val" id="bmin-v">10.0</span></div>
+            <input type="range" id="bmin" min="6" max="16" value="10" step="0.5"/>
+          </div>
+          <div>
+            <div class="row"><label style="font-weight:400;font-size:12px;">Máximo</label><span class="val" id="bmax-v">12.5</span></div>
+            <input type="range" id="bmax" min="6" max="16" value="12.5" step="0.5"/>
+          </div>
+        </div>
+        <div class="hint">Mínimo: la fruta más verde. Máximo: la más madura. La app evalúa ambos extremos.</div>
+      </div>
+
+      <div class="ctrl">
+        <div class="row"><label>Días desde el último recorrido</label><span class="val" id="dias-v">7</span></div>
+        <input type="range" id="dias" min="0" max="21" value="7" step="1"/>
+        <div class="hint">Madurez avanza ~0,35 °Brix/día.</div>
+      </div>
+
+      <hr class="divider"/>
+      <h2>Parámetros operativos</h2>
+      <p class="sub">Afectan productividad, cobertura y costo.</p>
+
+      <div class="ctrl">
+        <div class="row"><label>Personas asignadas</label><span class="val" id="per-v">7</span></div>
+        <input type="range" id="per" min="1" max="50" value="7" step="1"/>
+        <div class="hint">Al cambiar personas se recalculan frutas/día y costo.</div>
+      </div>
+
+      <div class="ctrl">
+        <div class="row"><label>Jornada (horas)</label><span class="val" id="hrs-v">7,3</span></div>
+        <input type="range" id="hrs" min="4" max="10" value="7.3" step="0.1"/>
+      </div>
+
+      <div class="ctrl">
+        <div class="row"><label>Jornal por persona ($/día)</label><span class="val" id="jor-v">105.333</span></div>
+        <input type="range" id="jor" min="40000" max="150000" value="105333" step="1000"/>
+        <div class="hint">Cargado con prestaciones: $3.160.000 ÷ 30 = $105.333/día. Máx. $150.000.</div>
+      </div>
+    </div>
+
+    <!-- PANEL DERECHO: RESULTADO -->
+    <div>
+      <!-- TARJETA DE RECOMENDACIÓN -->
+      <div id="reco" class="reco">
+        <span class="tag" id="r-tag">Sistema B</span>
+        <h3 id="r-title">B — Fruta concentrada</h3>
+        <div class="modo" id="r-modo">Cuadrilla de 7 personas + destajo $/kg</div>
+        <div class="lines" id="r-lines"></div>
+        <div class="sem"><span class="dot" id="s-dot"></span><span id="s-txt"></span></div>
+      </div>
+
+      <!-- KPIs PRODUCTIVIDAD -->
+      <div class="secttl" style="margin-top:16px;">Productividad y costo — cuadrilla completa</div>
+      <div class="grid4">
+        <div class="kpi"><div class="n" id="k-fpd">—</div><div class="l">Fr / persona-día</div></div>
+        <div class="kpi"><div class="n" id="k-fdia">—</div><div class="l">Fr totales / día (cuadrilla)</div></div>
+        <div class="kpi"><div class="n" id="k-kg">—</div><div class="l">Kg / persona-día</div></div>
+        <div class="kpi"><div class="n" id="k-cost">—</div><div class="l">Costo $/kg</div></div>
+      </div>
+
+      <!-- KPIs ÁREA -->
+      <div class="secttl" style="margin-top:14px;">Cobertura y volumen del bloque ingresado</div>
+      <div class="grid4">
+        <div class="kpi area"><div class="n" id="k-haday">—</div><div class="l">Ha cubiertas / día (cuadrilla)</div></div>
+        <div class="kpi area"><div class="n" id="k-days">—</div><div class="l">Días para cubrir el área</div></div>
+        <div class="kpi area"><div class="n" id="k-tfr">—</div><div class="l">Frutas totales en el área</div></div>
+        <div class="kpi area"><div class="n" id="k-tkg">—</div><div class="l">Kg estimados en el área</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GRÁFICAS -->
+  <div class="secttl">Curvas del modelo</div>
+  <div class="grid2x2">
+    <div class="card">
+      <h2>Costo y productividad según concentración</h2>
+      <p class="sub">El punto negro es tu bloque. La línea vertical marca el umbral B/C (500 frutas).</p>
+      <div class="legend">
+        <span><span style="width:13px;height:0;border-top:3px dotted #B23A2E;display:inline-block;"></span>Costo $/kg (izq.)</span>
+        <span><span style="width:13px;height:3px;background:#548235;display:inline-block;"></span>Fr/persona-día (der.)</span>
+        <span><span style="width:8px;height:8px;border-radius:50%;background:#1F2A1A;display:inline-block;"></span>Tu bloque</span>
+      </div>
+      <div class="chartbox"><canvas id="c1"></canvas></div>
+    </div>
+
+    <div class="card">
+      <h2>Proyección de madurez (°Brix vs días)</h2>
+      <p class="sub">Banda desde Brix mínimo hasta máximo. La zona verde es la ventana de cosecha (10–13 °Brix).</p>
+      <div class="legend">
+        <span><span style="width:13px;height:3px;background:#548235;display:inline-block;"></span>Brix máx.</span>
+        <span><span style="width:13px;height:0;border-top:2px dashed #548235;display:inline-block;"></span>Brix mín.</span>
+        <span><span style="width:13px;height:10px;background:#C0DD97;display:inline-block;opacity:.7;"></span>Ventana (10–13 °Brix)</span>
+      </div>
+      <div class="chartbox"><canvas id="c2"></canvas></div>
+    </div>
+  </div>
+
+  <!-- TABLA DE LÍMITES -->
+  <div class="secttl">Límites de decisión (análisis consolidado Fruta Natural Adelantada · O&M Guapa)</div>
+  <div class="card">
+    <table class="lim">
+      <thead><tr><th>Criterio</th><th><span class="pill b">B</span> Concentrada</th><th><span class="pill c">C</span> Dispersa</th></tr></thead>
+      <tbody>
+        <tr><td><b>Concentración</b></td><td>≥ 500 frutas / bloque</td><td>&lt; 500 frutas / bloque</td></tr>
+        <tr><td><b>Modo</b></td><td>Cuadrilla de 7 + destajo $/kg</td><td>Operarios + destajo (individual o en cuadrilla, indiferente)</td></tr>
+        <tr><td><b>N° de cuadrillas / operarios</b></td><td>Según el área a recorrer en la semana y el rendimiento</td><td>Indiferente; se ajusta al área</td></tr>
+        <tr><td><b>Criterio de madurez</b></td><td>Brix + organoléptico</td><td>Desde 10 °Brix</td></tr>
+        <tr><td><b>Frecuencia de cosecha</b></td><td>≈ cada 7 días</td><td>7–14 días según evolución de la fruta</td></tr>
+        <tr><td><b>Meta productividad</b></td><td>≥ 440 fr / persona-día</td><td>≥ 250 fr / persona-día</td></tr>
+        <tr><td><b>Costo típico</b></td><td>≈ $105–150 / kg</td><td>Hasta $791 / kg en bloques muy dispersos</td></tr>
+      </tbody>
+    </table>
+    <p class="note" style="margin-top:12px;">El Sistema A (cosechadora mecánica) <b>no se usa en fruta natural</b> — es el peor indicador de costo en esta condición. Los bloques con poca fruta igual se cosechan; su kg simplemente cuesta más.</p>
+  </div>
+
+  <p class="note" style="margin-top:18px;"><b>Cómo se calculan los indicadores.</b> Productividad interpolada de los datos reales de la BD de Cosecha 2026 (de 48 fr/persona-día en bloques &lt;200 frutas hasta ~470 en bloques muy concentrados). Costo $/kg = jornal ÷ (fr/persona-día × 1,54 kg/fruta). Frutas totales en el área = (frutas/bloque) × (área ÷ 0,30 ha/bloque). Los parámetros de madurez (+0,35 °Brix/día) son estimaciones a calibrar con datos de campo. App de uso interno · O&amp;M Agrícola Guapa.</p>
+</div>
+
+<script>
+(function(){
+  var KG=1.54, BHA=0.30;
+  // Anclas empíricas fr/persona-día
+  var A=[[0,0],[130,48],[350,156],[760,307],[1600,401],[5000,434],[15000,455],[50000,470]];
+  function fpd(fb){
+    if(fb>=50000) return 470;
+    if(fb<=0) return 0;
+    for(var i=1;i<A.length;i++){
+      if(fb<=A[i][0]){
+        var r=(fb-A[i-1][0])/(A[i][0]-A[i-1][0]);
+        return A[i-1][1]+(A[i][1]-A[i-1][1])*r;
+      }
+    }
+    return 470;
+  }
+  function costKg(fb,jor){ var f=fpd(fb); return f>0?jor/(f*KG):0; }
+  function fmt(n,dec){ return dec?n.toFixed(dec):Math.round(n).toLocaleString('es-CO'); }
+  function fmtc(n){ return '$'+fmt(n); }
+
+  var $=function(id){return document.getElementById(id);};
+  var fbEl=$('fb'),aEl=$('area'),bminEl=$('bmin'),bmaxEl=$('bmax'),
+      diasEl=$('dias'),perEl=$('per'),hrsEl=$('hrs'),jorEl=$('jor');
+
+  // CHART 1 — costo + productividad
+  var xs1=[]; for(var v=50;v<=50000;v+=250) xs1.push(v);
+  function cSeries(jor){ return xs1.map(function(fb){return Math.round(costKg(fb,jor));}); }
+  var fSeries=xs1.map(function(fb){return Math.round(fpd(fb));});
+
+  var mkPlugin={id:'mk',afterDraw:function(c){
+    var ctx=c.ctx,xa=c.scales.x,ya=c.chartArea;
+    var marks=[{v:500,col:'#375623',dash:[5,4],lab:'Umbral B/C'},{v:c.$fb,col:'#555',dash:[2,3],lab:''}];
+    marks.forEach(function(m){
+      if(!m.v)return;
+      var x=xa.getPixelForValue(m.v);
+      ctx.save();ctx.strokeStyle=m.col;ctx.setLineDash(m.dash);ctx.lineWidth=1.2;
+      ctx.beginPath();ctx.moveTo(x,ya.top);ctx.lineTo(x,ya.bottom);ctx.stroke();
+      if(m.lab){ctx.setLineDash([]);ctx.fillStyle=m.col;ctx.font='10px Arial';ctx.fillText(m.lab,x+3,ya.top+10);}
+      ctx.restore();
+    });
+  }};
+
+  var c1=new Chart($('c1').getContext('2d'),{
+    data:{labels:xs1,datasets:[
+      {type:'line',label:'Costo $/kg',data:cSeries(105333),yAxisID:'yc',borderColor:'#B23A2E',borderWidth:2.5,borderDash:[2,3],pointRadius:0,tension:.25},
+      {type:'line',label:'Fr/persona-día',data:fSeries,yAxisID:'yf',borderColor:'#548235',borderWidth:2.5,pointRadius:0,tension:.25},
+      {type:'scatter',label:'Tu bloque',data:[{x:800,y:Math.round(costKg(800,105333))}],yAxisID:'yc',borderColor:'#1F2A1A',backgroundColor:'#1F2A1A',pointRadius:6}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,animation:false,
+      scales:{
+        x:{type:'linear',min:0,max:50000,title:{display:true,text:'Frutas por bloque'},ticks:{font:{size:9},callback:function(v){return v>=1000?Math.round(v/1000)+'k':v;}}},
+        yc:{position:'left',beginAtZero:true,title:{display:true,text:'Costo $/kg'},ticks:{font:{size:9},callback:function(v){return '$'+v.toLocaleString('es-CO');}}},
+        yf:{position:'right',beginAtZero:true,max:500,title:{display:true,text:'Fr/persona-día'},grid:{drawOnChartArea:false},ticks:{font:{size:9}}}
+      },
+      plugins:{legend:{display:false},tooltip:{callbacks:{
+        title:function(it){return it[0].parsed.x.toLocaleString('es-CO')+' fr/bloque';},
+        label:function(it){var d=it.dataset.label,y=it.parsed.y;
+          return d==='Fr/persona-día'?d+': '+Math.round(y):d+': $'+Math.round(y).toLocaleString('es-CO');}}}}
+    },plugins:[mkPlugin]
+  });
+  c1.$fb=800;
+
+  // CHART 2 — proyección Brix (banda min-max)
+  var dxs=[]; for(var d=0;d<=21;d++) dxs.push(d);
+  var bandPlugin={id:'bd',beforeDraw:function(c){
+    var ya=c.scales.y,xa=c.chartArea,ctx=c.ctx;
+    var y1=ya.getPixelForValue(13),y2=ya.getPixelForValue(10);
+    ctx.save();ctx.fillStyle='rgba(99,153,34,.18)';ctx.fillRect(xa.left,y1,xa.right-xa.left,y2-y1);ctx.restore();
+  }};
+  var c2=new Chart($('c2').getContext('2d'),{
+    data:{labels:dxs,datasets:[
+      {type:'line',label:'Brix máx.',data:dxs.map(function(d){return +(12.5+0.35*d).toFixed(2);}),borderColor:'#548235',borderWidth:2.5,pointRadius:0,tension:.2,fill:'+1',backgroundColor:'rgba(169,209,142,.15)'},
+      {type:'line',label:'Brix mín.',data:dxs.map(function(d){return +(10+0.35*d).toFixed(2);}),borderColor:'#548235',borderWidth:1.5,borderDash:[5,4],pointRadius:0,tension:.2},
+      {type:'scatter',label:'Hoy mín.',data:[{x:0,y:10}],borderColor:'#1F2A1A',backgroundColor:'#1F2A1A',pointRadius:5},
+      {type:'scatter',label:'Hoy máx.',data:[{x:0,y:12.5}],borderColor:'#548235',backgroundColor:'#548235',pointRadius:5}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,animation:false,
+      scales:{
+        x:{type:'linear',min:0,max:21,title:{display:true,text:'Días desde hoy'},ticks:{stepSize:3,font:{size:9}}},
+        y:{min:5,max:17,title:{display:true,text:'°Brix'},ticks:{font:{size:9}}}
+      },
+      plugins:{legend:{display:false},tooltip:{callbacks:{
+        title:function(it){return 'Día +'+Math.round(it[0].parsed.x);},
+        label:function(it){return it.parsed.y.toFixed(1)+' °Brix';}}}}
+    },plugins:[bandPlugin]
+  });
+
+  function refresh(){
+    var fb=+fbEl.value, area=+aEl.value, bmin=+bminEl.value, bmax=+bmaxEl.value,
+        dias=+diasEl.value, per=+perEl.value, hrs=+hrsEl.value, jor=+jorEl.value;
+
+    // Validar bmin <= bmax
+    if(bmin>bmax){ if(this===bminEl) bmaxEl.value=bmin; else bminEl.value=bmax; bmin=+bminEl.value; bmax=+bmaxEl.value; }
+
+    // Labels
+    $('fb-v').textContent=fb.toLocaleString('es-CO');
+    $('area-v').textContent=area.toFixed(1)+' ha';
+    $('bmin-v').textContent=bmin.toFixed(1);
+    $('bmax-v').textContent=bmax.toFixed(1);
+    $('dias-v').textContent=dias;
+    $('per-v').textContent=per;
+    $('hrs-v').textContent=hrs.toFixed(1);
+    $('jor-v').textContent=Math.round(jor).toLocaleString('es-CO');
+
+    // Cálculos
+    var f=fpd(fb);
+    var cost=costKg(fb,jor);
+    var fDia=f*per;
+    var kgPer=f*KG;
+    var haDia=(fb>0 ? (f/fb)*BHA*per : 0);
+    var diasCubre=(haDia>0 ? area/haDia : 0);
+    var nBloques=area/BHA;
+    var tFrutas=fb*nBloques;
+    var tKg=tFrutas*KG;
+
+    // KPIs
+    $('k-fpd').textContent=Math.round(f);
+    $('k-fdia').textContent=Math.round(fDia).toLocaleString('es-CO');
+    $('k-kg').textContent=fmt(kgPer,1)+' kg';
+    $('k-cost').textContent=fmtc(cost)+'/kg';
+    $('k-haday').textContent=haDia.toFixed(2)+' ha';
+    $('k-days').textContent=diasCubre<1?'< 1 día':diasCubre.toFixed(1)+' días';
+    $('k-tfr').textContent=Math.round(tFrutas).toLocaleString('es-CO');
+    $('k-tkg').textContent=Math.round(tKg).toLocaleString('es-CO')+' kg';
+
+    // Recomendación B o C
+    var esB=fb>=500;
+    var r=$('reco'); r.className='reco'+(esB?'':' c');
+    $('r-tag').textContent=esB?'Sistema B':'Sistema C';
+    $('r-title').textContent=esB?'B — Fruta concentrada':'C — Fruta dispersa';
+    $('r-modo').textContent=esB?'Cuadrilla de 7 personas + destajo $/kg':'Operarios + destajo (individual o en cuadrilla)';
+    $('r-lines').innerHTML=esB
+      ?'<b>Frecuencia:</b> cosecha ≈ cada 7 días.<br><b>N° de cuadrillas:</b> según área a recorrer en la semana y el rendimiento.<br><b>Criterio:</b> Brix + organoléptico. <b>Costo estimado:</b> '+fmtc(cost)+'/kg.'
+      :'<b>Frecuencia:</b> 7–14 días según la evolución de la fruta.<br><b>N° de operarios:</b> indiferente (individual o en cuadrilla), se ajusta al área.<br><b>Criterio:</b> desde 10 °Brix. <b>Costo estimado:</b> '+fmtc(cost)+'/kg — la fruta dispersa cuesta más por kg.';
+
+    // Semáforo de madurez (rango)
+    var dot=$('s-dot'), txt=$('s-txt'), col, msg;
+    if(bmax<10){
+      col='#B23A2E';
+      var f1=Math.ceil((10-bmax)/0.35);
+      msg='Aún no cosechar: el Brix máximo ('+bmax.toFixed(1)+'°) no llega a 10. Faltan ~'+f1+' días.';
+    } else if(bmin<10 && bmax>=10){
+      col='#BF8F00';
+      msg='Cosecha parcial: la fruta más madura ya está en ventana ('+bmax.toFixed(1)+'°Brix) pero parte del bloque aún no llega a 10° (mín. '+bmin.toFixed(1)+'°). Seleccionar frutas maduras.';
+    } else if(bmin>=10 && bmax<=13){
+      col='#548235';
+      msg='Ventana óptima ('+bmin.toFixed(1)+'–'+bmax.toFixed(1)+'°Brix). Todo el bloque en punto. Programar la cuadrilla.';
+    } else if(bmin>=10 && bmax>13){
+      col='#BF8F00';
+      msg='Atención: parte del bloque (Brix máx. '+bmax.toFixed(1)+'°) ya pasó el punto óptimo. Cosechar urgente para no perder calidad.';
+    } else {
+      col='#B23A2E';
+      msg='Sobremadurez: Brix mínimo '+bmin.toFixed(1)+'°. Cosechar de inmediato y revisar calidad.';
+    }
+    dot.style.background=col; txt.textContent=msg;
+
+    // Chart 1
+    c1.data.datasets[0].data=cSeries(jor);
+    c1.data.datasets[2].data=[{x:fb,y:Math.round(cost)}];
+    c1.$fb=fb; c1.update();
+
+    // Chart 2
+    c2.data.datasets[0].data=dxs.map(function(d){return +(bmax+0.35*d).toFixed(2);});
+    c2.data.datasets[1].data=dxs.map(function(d){return +(bmin+0.35*d).toFixed(2);});
+    c2.data.datasets[2].data=[{x:0,y:bmin}];
+    c2.data.datasets[3].data=[{x:0,y:bmax}];
+    c2.update();
+  }
+
+  [fbEl,aEl,bminEl,bmaxEl,diasEl,perEl,hrsEl,jorEl].forEach(function(el){el.addEventListener('input',refresh);});
+  refresh();
+})();
+</script>
+</body>
+</html>
